@@ -29,6 +29,7 @@ import MiVentaDetail from '../pages/venta/MiVentaDetail.jsx';
 import MiPerfil from '../pages/cliente/MiPerfil.jsx';
 import EditarPerfil from '../pages/cliente/EditarPerfil.jsx';
 import CambiarContrasena from '../pages/cliente/CambiarContrasena.jsx';
+import ReportesPage from '../pages/reportes/ReportesPage.jsx';
 
 const AppRouter = () =>{
     return(
@@ -75,6 +76,7 @@ const AppRouter = () =>{
                     <Route path="/dashboard/ventas/pagar/:ventaId" element={<PagoCheckout />} />
                     <Route path="/dashboard/pagos" element={<PagosList />} />
                     <Route path="/bitacora" element={<BitacoraPage/>} />
+                    <Route path="/reportes" element={<ReportesPage/>} />
                 </Route>
                 {/* Redirección por defecto si la ruta no existe (opcional) */}
                 <Route path="*" element={<Navigate to="/" replace />} />

@@ -104,4 +104,18 @@ export const getAllDepartamentos = async () => {
     }
 };
 
+/** @param {Object} clienteData - Datos para actualizar (nombre, nit, etc.)*/
+/** @returns {Promise}*/
+export const updateMiCliente = async (clienteData) => {
+    try {
+    // Nota: Esta URL debe apuntar a tu MiClienteView.
+    // No necesita ID, ya que el backend sabe quién es el usuario por el token.
+        const response = await clienteApi.put('api/mi-cliente/', clienteData);
+        return response.data;
+    } catch (error) {
+        console.error('Error al actualizar el perfil del cliente', error);
+        throw error;
+    }
+};
+
 export default clienteApi;

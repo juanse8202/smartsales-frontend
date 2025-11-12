@@ -54,8 +54,8 @@ const navData = [
     icon: <FaLightbulb size={20} />, 
     to: '/bi',
     submodules: [
-      { name: 'Reportes', to: '/bi/reportes' },
-      { name: 'Predicciones', to: '/bi/predicciones' },
+      { name: 'Reportes', to: '/reportes' },
+      { name: 'Predicciones', to: '/predicciones' },
     ]
   },
 ];

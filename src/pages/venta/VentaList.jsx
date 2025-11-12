@@ -10,6 +10,7 @@ import {
 } from '../../api/VentaApi';
 import { getAllClientes } from '../../api/ClienteApi';
 import Table from '../../components/Table';
+import { FaEye, FaTrashAlt, FaEdit } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 
 const VentaList = () => {
@@ -71,77 +72,67 @@ const VentaList = () => {
   };
 
   const columns = [
-    { key: 'id', label: 'ID' },
-    { key: 'cliente_nombre', label: 'Cliente' },
-    { 
-      key: 'fecha', 
-      label: 'Fecha',
-      render: (item) => new Date(item.fecha).toLocaleDateString('es-BO')
-    },
-    { 
-      key: 'total', 
-      label: 'Total',
-      render: (item) => `Bs. ${parseFloat(item.total).toFixed(2)}`
-    },
-    { 
-      key: 'estado', 
-      label: 'Estado',
-      render: (item) => (
-        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
-          item.estado === 'completada' ? 'bg-green-100 text-green-800' : 
-          item.estado === 'pendiente' ? 'bg-yellow-100 text-yellow-800' : 
-          'bg-red-100 text-red-800'
-        }`}>
-          {item.estado === 'completada' && (
-            <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-            </svg>
-          )}
-          {item.estado === 'pendiente' && (
-            <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
-            </svg>
-          )}
-          {item.estado === 'cancelada' && (
-            <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-            </svg>
-          )}
-          {item.estado.charAt(0).toUpperCase() + item.estado.slice(1)}
-        </span>
-      )
-    },
-    { 
-      key: 'total_productos', 
-      label: 'Productos'
-    }
+    { header: 'ID', accessor: 'id' },
+    { header: 'Cliente', accessor: 'cliente_display' },
+    { header: 'Fecha', accessor: 'fecha_display' },
+    { header: 'Total', accessor: 'total_display' },
+    { header: 'Estado', accessor: 'estado_display' },
+    { header: 'Productos', accessor: 'productos_display' }
   ];
 
-  const actions = [
-    {
-      label: 'Ver',
-      className: 'btn-info',
-      onClick: (item) => navigate(`/dashboard/ventas/${item.id}`)
-    },
-    {
-      label: 'Cambiar Estado',
-      className: 'btn-warning',
-      onClick: (item) => {
-        const nuevoEstado = prompt(
-          'Ingrese el nuevo estado (pendiente/completada/cancelada):',
-          item.estado
-        );
-        if (nuevoEstado && ['pendiente', 'completada', 'cancelada'].includes(nuevoEstado)) {
-          handleCambiarEstado(item.id, nuevoEstado);
-        }
-      }
-    },
-    {
-      label: 'Eliminar',
-      className: 'btn-danger',
-      onClick: (item) => handleDelete(item.id)
-    }
-  ];
+  // Prepara los datos para la tabla con campos formateados
+  const prepareDataForTable = () => {
+    if (!Array.isArray(ventas)) return [];
+    return ventas.map(v => ({
+      ...v,
+      cliente_display: v.cliente?.nombre || 'Consumidor Final',
+      fecha_display: v.fecha ? new Date(v.fecha).toLocaleString('es-BO') : '-',
+      total_display: `Bs. ${parseFloat(v.total || 0).toFixed(2)}`,
+      estado_display: (
+        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
+          v.estado === 'completada' ? 'bg-green-100 text-green-800' : 
+          v.estado === 'pendiente' ? 'bg-yellow-100 text-yellow-800' : 
+          'bg-red-100 text-red-800'
+        }`}>
+          {v.estado && (v.estado.charAt(0).toUpperCase() + v.estado.slice(1))}
+        </span>
+      ),
+      productos_display: Array.isArray(v.items) ? v.items.length : (v.total_productos || 0)
+    }));
+  };
+
+  const renderActions = (item) => (
+    <div className="flex justify-center items-center gap-2">
+      <button
+        onClick={() => navigate(`/dashboard/ventas/${item.id}`)}
+        className="p-2 text-gray-500 hover:text-green-700 hover:bg-gray-100 rounded-full transition-colors"
+        title="Ver detalles"
+      >
+        <FaEye size={16} />
+      </button>
+
+      <button
+        onClick={() => {
+          const nuevoEstado = prompt('Ingrese el nuevo estado (pendiente/completada/cancelada):', item.estado);
+          if (nuevoEstado && ['pendiente', 'completada', 'cancelada'].includes(nuevoEstado)) {
+            handleCambiarEstado(item.id, nuevoEstado);
+          }
+        }}
+        className="p-2 text-gray-500 hover:text-yellow-700 hover:bg-yellow-50 rounded-full transition-colors"
+        title="Cambiar estado"
+      >
+        <FaEdit size={16} />
+      </button>
+
+      <button
+        onClick={() => handleDelete(item.id)}
+        className="p-2 text-gray-500 hover:text-red-700 hover:bg-red-50 rounded-full transition-colors"
+        title="Eliminar"
+      >
+        <FaTrashAlt size={16} />
+      </button>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
@@ -282,9 +273,9 @@ const VentaList = () => {
           </div>
         ) : (
           <Table 
-            data={ventas}
             columns={columns}
-            actions={actions}
+            data={prepareDataForTable()}
+            renderActions={renderActions}
           />
         )}
       </div>

@@ -11,7 +11,7 @@ import axiosInstance from './axiosConfig';
  */
 export const getAllPagos = async (params = {}) => {
   try {
-    const response = await axiosInstance.get('/pagos/', { params });
+    const response = await axiosInstance.get('pagos/', { params });
     return response.data;
   } catch (error) {
     console.error('Error al obtener pagos:', error);
@@ -26,7 +26,7 @@ export const getAllPagos = async (params = {}) => {
  */
 export const getPagoById = async (id) => {
   try {
-    const response = await axiosInstance.get(`/pagos/${id}/`);
+    const response = await axiosInstance.get(`pagos/${id}/`);
     return response.data;
   } catch (error) {
     console.error(`Error al obtener pago ${id}:`, error);
@@ -41,7 +41,7 @@ export const getPagoById = async (id) => {
  */
 export const createPago = async (pagoData) => {
   try {
-    const response = await axiosInstance.post('/pagos/', pagoData);
+    const response = await axiosInstance.post('pagos/', pagoData);
     return response.data;
   } catch (error) {
     console.error('Error al registrar pago:', error);
@@ -57,7 +57,7 @@ export const createPago = async (pagoData) => {
  */
 export const updatePago = async (id, pagoData) => {
   try {
-    const response = await axiosInstance.patch(`/pagos/${id}/`, pagoData);
+    const response = await axiosInstance.patch(`pagos/${id}/`, pagoData);
     return response.data;
   } catch (error) {
     console.error(`Error al actualizar pago ${id}:`, error);
@@ -72,7 +72,7 @@ export const updatePago = async (id, pagoData) => {
  */
 export const getPagosByVenta = async (ventaId) => {
   try {
-    const response = await axiosInstance.get('/pagos/', {
+    const response = await axiosInstance.get('pagos/', {
       params: { venta: ventaId }
     });
     return response.data;
