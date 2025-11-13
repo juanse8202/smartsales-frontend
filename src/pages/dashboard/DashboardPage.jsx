@@ -5,14 +5,15 @@ import {
 } from 'recharts';
 import { 
   FaShoppingCart, FaUsers, FaDollarSign, FaChartLine,
-  FaCheckCircle, FaClock, FaTimesCircle 
+  FaCheckCircle, FaClock, FaTimesCircle, FaBrain 
 } from 'react-icons/fa';
-import { getEstadisticasVentas, getSalesOverTime, getTopClients } from '../../api/VentaApi';
+import { getEstadisticasVentas, getSalesOverTime, getTopClients, getSalesPredictions } from '../../api/VentaApi';
 
 function DashboardPage() {
   const [stats, setStats] = useState(null);
   const [salesData, setSalesData] = useState([]);
   const [topClients, setTopClients] = useState([]);
+  const [predictions, setPredictions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -23,10 +24,11 @@ function DashboardPage() {
   const loadDashboardData = async () => {
     try {
       setLoading(true);
-      const [statsData, salesOverTime, clientsData] = await Promise.all([
+      const [statsData, salesOverTime, clientsData, predictionsData] = await Promise.all([
         getEstadisticasVentas(),
         getSalesOverTime(),
-        getTopClients()
+        getTopClients(),
+        getSalesPredictions().catch(() => [])
       ]);
       
       setStats(statsData);
@@ -46,6 +48,13 @@ function DashboardPage() {
         total: parseFloat(item.monto_total || 0)
       }));
       setTopClients(formattedClients);
+      
+      // Formatear datos de predicciones
+      const formattedPredictions = predictionsData.map(item => ({
+        mes: item.label,
+        prediccion: parseFloat(item.predicted_sales || 0)
+      }));
+      setPredictions(formattedPredictions);
       
     } catch (err) {
       console.error('Error al cargar datos del dashboard:', err);
@@ -213,6 +222,43 @@ function DashboardPage() {
           )}
         </div>
       </div>
+
+      {/* Predicciones de Ventas con IA */}
+      {predictions.length > 0 && (
+        <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-6 shadow-md border border-purple-200">
+          <h2 className="text-xl font-semibold text-gray-700 mb-4 flex items-center">
+            <FaBrain className="mr-2 text-purple-600" />
+            Predicciones de Ventas (Próximos 6 Meses)
+          </h2>
+          <div className="bg-purple-100 border border-purple-300 rounded-lg p-3 mb-4">
+            <p className="text-sm text-purple-800 flex items-center">
+              <FaBrain className="mr-2" />
+              <span className="font-semibold">Predicciones generadas por Inteligencia Artificial</span>
+            </p>
+            <p className="text-xs text-purple-600 mt-1">
+              Basado en el análisis histórico de ventas usando Machine Learning
+            </p>
+          </div>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={predictions}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="mes" />
+              <YAxis />
+              <Tooltip formatter={(value) => `Bs. ${value.toFixed(2)}`} />
+              <Legend />
+              <Line 
+                type="monotone" 
+                dataKey="prediccion" 
+                stroke="#8B5CF6" 
+                strokeWidth={3}
+                strokeDasharray="5 5"
+                name="Ventas Predichas (Bs.)"
+                dot={{ fill: '#8B5CF6', r: 5 }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      )}
 
       {/* Top Clientes */}
       <div className="bg-white rounded-lg p-6 shadow-md">

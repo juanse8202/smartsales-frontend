@@ -154,3 +154,17 @@ export const getTopClients = async () => {
     throw error;
   }
 };
+
+/**
+ * Obtener predicciones de ventas para los próximos 6 meses
+ * @returns {Promise} Lista de predicciones
+ */
+export const getSalesPredictions = async () => {
+  try {
+    const response = await axiosInstance.get('sales-prediction/');
+    return response.data;
+  } catch (error) {
+    console.error('Error al obtener predicciones:', error);
+    throw error;
+  }
+};
