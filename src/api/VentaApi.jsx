@@ -126,3 +126,31 @@ export const getDetallesVenta = async (ventaId) => {
     throw error;
   }
 };
+
+/**
+ * Obtener ventas agrupadas por día para gráfico de líneas
+ * @returns {Promise} Datos de ventas por día
+ */
+export const getSalesOverTime = async () => {
+  try {
+    const response = await axiosInstance.get('ventas/dashboard-sales-over-time/');
+    return response.data;
+  } catch (error) {
+    console.error('Error al obtener ventas por fecha:', error);
+    throw error;
+  }
+};
+
+/**
+ * Obtener top 5 clientes con más compras
+ * @returns {Promise} Lista de top clientes
+ */
+export const getTopClients = async () => {
+  try {
+    const response = await axiosInstance.get('ventas/dashboard-top-clients/');
+    return response.data;
+  } catch (error) {
+    console.error('Error al obtener top clientes:', error);
+    throw error;
+  }
+};
