@@ -5,7 +5,7 @@ import {
 } from 'recharts';
 import { 
   FaShoppingCart, FaUsers, FaDollarSign, FaChartLine,
-  FaCheckCircle, FaClock, FaTimesCircle, FaBrain 
+  FaCheckCircle, FaClock, FaTimesCircle, FaBrain, FaBoxOpen 
 } from 'react-icons/fa';
 import { getEstadisticasVentas, getSalesOverTime, getTopClients, getSalesPredictions } from '../../api/VentaApi';
 
@@ -66,6 +66,15 @@ function DashboardPage() {
 
   // Colores para los gráficos
   const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];
+
+  // Datos MOCK de productos más vendidos (visual)
+  const topProductsData = [
+    { nombre: 'TV LG 55" 4K', ventas: 45, color: '#3B82F6' },
+    { nombre: 'Refrigerador Samsung 380L', ventas: 38, color: '#10B981' },
+    { nombre: 'Lavadora Samsung 22kg AI', ventas: 32, color: '#F59E0B' },
+    { nombre: 'Aire Midea 12000 BTU', ventas: 28, color: '#EF4444' },
+    { nombre: 'Cocina Mabe 4 Hornallas', ventas: 25, color: '#8B5CF6' }
+  ];
 
   // Datos para el gráfico de pastel de estados
   const estadosPieData = stats ? [
@@ -260,30 +269,55 @@ function DashboardPage() {
         </div>
       )}
 
-      {/* Top Clientes */}
-      <div className="bg-white rounded-lg p-6 shadow-md">
-        <h2 className="text-xl font-semibold text-gray-700 mb-4 flex items-center">
-          <FaUsers className="mr-2 text-blue-600" />
-          Top 5 Clientes
-        </h2>
-        {topClients.length > 0 ? (
+      {/* Gráficos en Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Top Clientes */}
+        <div className="bg-white rounded-lg p-6 shadow-md">
+          <h2 className="text-xl font-semibold text-gray-700 mb-4 flex items-center">
+            <FaUsers className="mr-2 text-blue-600" />
+            Top 5 Clientes
+          </h2>
+          {topClients.length > 0 ? (
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={topClients}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="nombre" />
+                <YAxis />
+                <Tooltip formatter={(value) => `Bs. ${value.toFixed(2)}`} />
+                <Legend />
+                <Bar dataKey="total" fill="#3B82F6" name="Total Gastado (Bs.)">
+                  {topClients.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <p className="text-gray-500 text-center py-12">No hay datos de clientes disponibles</p>
+          )}
+        </div>
+
+        {/* Productos Más Vendidos (VISUAL) */}
+        <div className="bg-white rounded-lg p-6 shadow-md">
+          <h2 className="text-xl font-semibold text-gray-700 mb-4 flex items-center">
+            <FaBoxOpen className="mr-2 text-green-600" />
+            Top 5 Productos Más Vendidos
+          </h2>
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={topClients}>
+            <BarChart data={topProductsData} layout="vertical">
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="nombre" />
-              <YAxis />
-              <Tooltip formatter={(value) => `Bs. ${value.toFixed(2)}`} />
+              <XAxis type="number" />
+              <YAxis dataKey="nombre" type="category" width={150} />
+              <Tooltip formatter={(value) => [`${value} unidades`, 'Ventas']} />
               <Legend />
-              <Bar dataKey="total" fill="#3B82F6" name="Total Gastado (Bs.)">
-                {topClients.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+              <Bar dataKey="ventas" name="Unidades Vendidas">
+                {topProductsData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.color} />
                 ))}
               </Bar>
             </BarChart>
           </ResponsiveContainer>
-        ) : (
-          <p className="text-gray-500 text-center py-12">No hay datos de clientes disponibles</p>
-        )}
+        </div>
       </div>
 
       {/* Información adicional */}
