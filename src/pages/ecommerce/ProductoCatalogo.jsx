@@ -80,15 +80,11 @@ const ProductoCatalogo = () => {
     const result = await addItem(catalogoId, 1);
     setAddingToCart(null);
     
-    if (result.success) {
-      alert(`✅ "${nombre}" agregado al carrito`);
-    } else if (result.needsLogin) {
-      // Usuario no autenticado
-      alert('⚠️ Debes iniciar sesión para agregar productos al carrito');
+    if (result.needsLogin) {
+      // Usuario no autenticado - mostrar modal de login
       openLoginModal();
-    } else {
-      alert('❌ Error al agregar al carrito');
     }
+    // Eliminado el alert, ahora se agrega silenciosamente al carrito
   };
 
   // Obtener categorías y marcas únicas
