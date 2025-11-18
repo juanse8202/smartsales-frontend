@@ -1,19 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
+  LineChart, Line, BarChart, Bar, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
 } from 'recharts';
 import { 
   FaShoppingCart, FaUsers, FaDollarSign, FaChartLine,
-  FaCheckCircle, FaClock, FaTimesCircle, FaBrain, FaBoxOpen 
+  FaCheckCircle, FaClock, FaTimesCircle, FaBrain, FaBoxOpen,
+  FaCalendarDay, FaCalendarAlt, FaCalendar, FaSortAmountUp, FaSortAmountDown 
 } from 'react-icons/fa';
-import { getEstadisticasVentas, getSalesOverTime, getTopClients, getSalesPredictions } from '../../api/VentaApi';
+import { getEstadisticasVentas, getSalesOverTime, getTopClients, getSalesPredictions, getTopProducts } from '../../api/VentaApi';
 
 function DashboardPage() {
   const [stats, setStats] = useState(null);
   const [salesData, setSalesData] = useState([]);
   const [topClients, setTopClients] = useState([]);
+  const [topProducts, setTopProducts] = useState([]);
   const [predictions, setPredictions] = useState([]);
+  const [periodo, setPeriodo] = useState('dia'); // 'dia', 'mes', 'anio'
+  const [ordenClientes, setOrdenClientes] = useState('desc'); // 'desc' = Top 5, 'asc' = Bottom 5
+  const [ordenProductos, setOrdenProductos] = useState('desc'); // 'desc' = Top 5, 'asc' = Bottom 5
+  const [loadingSales, setLoadingSales] = useState(false);
+  const [loadingClients, setLoadingClients] = useState(false);
+  const [loadingProducts, setLoadingProducts] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -24,20 +32,34 @@ function DashboardPage() {
   const loadDashboardData = async () => {
     try {
       setLoading(true);
-      const [statsData, salesOverTime, clientsData, predictionsData] = await Promise.all([
+      const [statsData, salesOverTime, clientsData, productsData, predictionsData] = await Promise.all([
         getEstadisticasVentas(),
-        getSalesOverTime(),
-        getTopClients(),
+        getSalesOverTime(periodo),
+        getTopClients(ordenClientes),
+        getTopProducts(ordenProductos),
         getSalesPredictions().catch(() => [])
       ]);
       
       setStats(statsData);
       
-      // Formatear datos de ventas por fecha
-      const formattedSales = salesOverTime.map(item => ({
-        fecha: new Date(item.day).toLocaleDateString('es-BO', { month: 'short', day: 'numeric' }),
-        ventas: parseFloat(item.total_ventas || 0)
-      }));
+      // Formatear datos de ventas por fecha según periodo
+      const formattedSales = salesOverTime.map(item => {
+        const date = new Date(item.fecha);
+        let fechaLabel = '';
+        
+        if (periodo === 'dia') {
+          fechaLabel = date.toLocaleDateString('es-BO', { month: 'short', day: 'numeric' });
+        } else if (periodo === 'mes') {
+          fechaLabel = date.toLocaleDateString('es-BO', { year: 'numeric', month: 'short' });
+        } else if (periodo === 'anio') {
+          fechaLabel = date.getFullYear().toString();
+        }
+        
+        return {
+          fecha: fechaLabel,
+          ventas: parseFloat(item.total_ventas || 0)
+        };
+      });
       setSalesData(formattedSales);
       
       // Formatear datos de top clientes
@@ -48,6 +70,13 @@ function DashboardPage() {
         total: parseFloat(item.monto_total || 0)
       }));
       setTopClients(formattedClients);
+      
+      // Formatear datos de productos
+      const formattedProducts = productsData.map(item => ({
+        nombre: item.catalogo__nombre || 'Sin nombre',
+        ventas: parseFloat(item.monto_total_vendido || 0)
+      }));
+      setTopProducts(formattedProducts);
       
       // Formatear datos de predicciones
       const formattedPredictions = predictionsData.map(item => ({
@@ -64,24 +93,77 @@ function DashboardPage() {
     }
   };
 
+  // Función para cambiar periodo de ventas
+  const handlePeriodoChange = async (nuevoPeriodo) => {
+    setPeriodo(nuevoPeriodo);
+    setLoadingSales(true);
+    try {
+      const salesOverTime = await getSalesOverTime(nuevoPeriodo);
+      const formattedSales = salesOverTime.map(item => {
+        const date = new Date(item.fecha);
+        let fechaLabel = '';
+        
+        if (nuevoPeriodo === 'dia') {
+          fechaLabel = date.toLocaleDateString('es-BO', { month: 'short', day: 'numeric' });
+        } else if (nuevoPeriodo === 'mes') {
+          fechaLabel = date.toLocaleDateString('es-BO', { year: 'numeric', month: 'short' });
+        } else if (nuevoPeriodo === 'anio') {
+          fechaLabel = date.getFullYear().toString();
+        }
+        
+        return {
+          fecha: fechaLabel,
+          ventas: parseFloat(item.total_ventas || 0)
+        };
+      });
+      setSalesData(formattedSales);
+    } catch (err) {
+      console.error('Error al cargar ventas:', err);
+    } finally {
+      setLoadingSales(false);
+    }
+  };
+
+  // Función para cambiar orden de clientes
+  const handleOrdenClientesChange = async (nuevoOrden) => {
+    setOrdenClientes(nuevoOrden);
+    setLoadingClients(true);
+    try {
+      const clientsData = await getTopClients(nuevoOrden);
+      const formattedClients = clientsData.map(item => ({
+        nombre: item.cliente__nombre || 'Sin nombre',
+        nit: item.cliente__nit_ci || 'N/A',
+        compras: item.cantidad_compras || 0,
+        total: parseFloat(item.monto_total || 0)
+      }));
+      setTopClients(formattedClients);
+    } catch (err) {
+      console.error('Error al cargar clientes:', err);
+    } finally {
+      setLoadingClients(false);
+    }
+  };
+
+  // Función para cambiar orden de productos
+  const handleOrdenProductosChange = async (nuevoOrden) => {
+    setOrdenProductos(nuevoOrden);
+    setLoadingProducts(true);
+    try {
+      const productsData = await getTopProducts(nuevoOrden);
+      const formattedProducts = productsData.map(item => ({
+        nombre: item.catalogo__nombre || 'Sin nombre',
+        ventas: parseFloat(item.monto_total_vendido || 0)
+      }));
+      setTopProducts(formattedProducts);
+    } catch (err) {
+      console.error('Error al cargar productos:', err);
+    } finally {
+      setLoadingProducts(false);
+    }
+  };
+
   // Colores para los gráficos
   const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];
-
-  // Datos MOCK de productos más vendidos (visual)
-  const topProductsData = [
-    { nombre: 'TV LG 55" 4K', ventas: 45, color: '#3B82F6' },
-    { nombre: 'Refrigerador Samsung 380L', ventas: 38, color: '#10B981' },
-    { nombre: 'Lavadora Samsung 22kg AI', ventas: 32, color: '#F59E0B' },
-    { nombre: 'Aire Midea 12000 BTU', ventas: 28, color: '#EF4444' },
-    { nombre: 'Cocina Mabe 4 Hornallas', ventas: 25, color: '#8B5CF6' }
-  ];
-
-  // Datos para el gráfico de pastel de estados
-  const estadosPieData = stats ? [
-    { name: 'Completadas', value: stats.ventas_completadas, color: '#10B981' },
-    { name: 'Pendientes', value: stats.ventas_pendientes, color: '#F59E0B' },
-    { name: 'Canceladas', value: stats.ventas_canceladas, color: '#EF4444' }
-  ].filter(item => item.value > 0) : [];
 
   if (loading) {
     return (
@@ -172,64 +254,77 @@ function DashboardPage() {
         </div>
       </div>
 
-      {/* Gráficos */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Gráfico de Ventas por Fecha */}
-        <div className="bg-white rounded-lg p-6 shadow-md">
-          <h2 className="text-xl font-semibold text-gray-700 mb-4">
+      {/* Gráfico de Ventas por Fecha */}
+      <div className="bg-white rounded-lg p-6 shadow-md">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold text-gray-700">
             Ventas en el Tiempo
           </h2>
-          {salesData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={salesData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="fecha" />
-                <YAxis />
-                <Tooltip formatter={(value) => `Bs. ${value.toFixed(2)}`} />
-                <Legend />
-                <Line 
-                  type="monotone" 
-                  dataKey="ventas" 
-                  stroke="#3B82F6" 
-                  strokeWidth={2}
-                  name="Ventas (Bs.)"
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          ) : (
-            <p className="text-gray-500 text-center py-12">No hay datos de ventas disponibles</p>
-          )}
+          {/* Botones de filtro por periodo */}
+          <div className="flex gap-2">
+            <button
+              onClick={() => handlePeriodoChange('dia')}
+              className={`flex items-center px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                periodo === 'dia' 
+                  ? 'bg-blue-600 text-white' 
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+              disabled={loadingSales}
+            >
+              <FaCalendarDay className="mr-1.5" size={14} />
+              Día
+            </button>
+            <button
+              onClick={() => handlePeriodoChange('mes')}
+              className={`flex items-center px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                periodo === 'mes' 
+                  ? 'bg-blue-600 text-white' 
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+              disabled={loadingSales}
+            >
+              <FaCalendarAlt className="mr-1.5" size={14} />
+              Mes
+            </button>
+            <button
+              onClick={() => handlePeriodoChange('anio')}
+              className={`flex items-center px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                periodo === 'anio' 
+                  ? 'bg-blue-600 text-white' 
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+              disabled={loadingSales}
+            >
+              <FaCalendar className="mr-1.5" size={14} />
+              Año
+            </button>
+          </div>
         </div>
-
-        {/* Gráfico de Estados */}
-        <div className="bg-white rounded-lg p-6 shadow-md">
-          <h2 className="text-xl font-semibold text-gray-700 mb-4">
-            Distribución de Estados
-          </h2>
-          {estadosPieData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={estadosPieData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {estadosPieData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          ) : (
-            <p className="text-gray-500 text-center py-12">No hay datos de estados disponibles</p>
-          )}
-        </div>
+        {loadingSales ? (
+          <div className="flex items-center justify-center py-20">
+            <div className="w-8 h-8 border-3 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+          </div>
+        ) : salesData.length > 0 ? (
+          <ResponsiveContainer width="100%" height={400}>
+            <LineChart data={salesData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="fecha" />
+              <YAxis />
+              <Tooltip formatter={(value) => `Bs. ${value.toFixed(2)}`} />
+              <Legend />
+              <Line 
+                type="monotone" 
+                dataKey="ventas" 
+                stroke="#3B82F6" 
+                strokeWidth={3}
+                name="Ventas (Bs.)"
+                dot={{ fill: '#3B82F6', r: 4 }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        ) : (
+          <p className="text-gray-500 text-center py-20">No hay datos de ventas disponibles</p>
+        )}
       </div>
 
       {/* Predicciones de Ventas con IA */}
@@ -271,13 +366,48 @@ function DashboardPage() {
 
       {/* Gráficos en Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Top Clientes */}
+        {/* Top/Bottom Clientes */}
         <div className="bg-white rounded-lg p-6 shadow-md">
-          <h2 className="text-xl font-semibold text-gray-700 mb-4 flex items-center">
-            <FaUsers className="mr-2 text-blue-600" />
-            Top 5 Clientes
-          </h2>
-          {topClients.length > 0 ? (
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold text-gray-700 flex items-center">
+              <FaUsers className="mr-2 text-blue-600" />
+              {ordenClientes === 'desc' ? 'Top 5 Clientes' : 'Bottom 5 Clientes'}
+            </h2>
+            {/* Botones de filtro Top/Bottom */}
+            <div className="flex gap-2">
+              <button
+                onClick={() => handleOrdenClientesChange('desc')}
+                className={`flex items-center px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  ordenClientes === 'desc' 
+                    ? 'bg-green-600 text-white' 
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+                disabled={loadingClients}
+                title="Clientes que más gastaron"
+              >
+                <FaSortAmountDown className="mr-1.5" size={14} />
+                Top 5
+              </button>
+              <button
+                onClick={() => handleOrdenClientesChange('asc')}
+                className={`flex items-center px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  ordenClientes === 'asc' 
+                    ? 'bg-red-600 text-white' 
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+                disabled={loadingClients}
+                title="Clientes que menos gastaron"
+              >
+                <FaSortAmountUp className="mr-1.5" size={14} />
+                Bottom 5
+              </button>
+            </div>
+          </div>
+          {loadingClients ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="w-8 h-8 border-3 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+            </div>
+          ) : topClients.length > 0 ? (
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={topClients}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -297,26 +427,65 @@ function DashboardPage() {
           )}
         </div>
 
-        {/* Productos Más Vendidos (VISUAL) */}
+        {/* Top/Bottom Productos */}
         <div className="bg-white rounded-lg p-6 shadow-md">
-          <h2 className="text-xl font-semibold text-gray-700 mb-4 flex items-center">
-            <FaBoxOpen className="mr-2 text-green-600" />
-            Top 5 Productos Más Vendidos
-          </h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={topProductsData} layout="vertical">
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis type="number" />
-              <YAxis dataKey="nombre" type="category" width={150} />
-              <Tooltip formatter={(value) => [`${value} unidades`, 'Ventas']} />
-              <Legend />
-              <Bar dataKey="ventas" name="Unidades Vendidas">
-                {topProductsData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold text-gray-700 flex items-center">
+              <FaBoxOpen className="mr-2 text-green-600" />
+              {ordenProductos === 'desc' ? 'Top 5 Productos' : 'Bottom 5 Productos'}
+            </h2>
+            {/* Botones de filtro Top/Bottom */}
+            <div className="flex gap-2">
+              <button
+                onClick={() => handleOrdenProductosChange('desc')}
+                className={`flex items-center px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  ordenProductos === 'desc' 
+                    ? 'bg-green-600 text-white' 
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+                disabled={loadingProducts}
+                title="Productos más vendidos"
+              >
+                <FaSortAmountDown className="mr-1.5" size={14} />
+                Top 5
+              </button>
+              <button
+                onClick={() => handleOrdenProductosChange('asc')}
+                className={`flex items-center px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  ordenProductos === 'asc' 
+                    ? 'bg-red-600 text-white' 
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+                disabled={loadingProducts}
+                title="Productos menos vendidos"
+              >
+                <FaSortAmountUp className="mr-1.5" size={14} />
+                Bottom 5
+              </button>
+            </div>
+          </div>
+          {loadingProducts ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="w-8 h-8 border-3 border-green-200 border-t-green-600 rounded-full animate-spin"></div>
+            </div>
+          ) : topProducts.length > 0 ? (
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={topProducts} layout="vertical">
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis type="number" />
+                <YAxis dataKey="nombre" type="category" width={150} />
+                <Tooltip formatter={(value) => [`Bs. ${value.toFixed(2)}`, 'Total Vendido']} />
+                <Legend />
+                <Bar dataKey="ventas" name="Monto Total (Bs.)">
+                  {topProducts.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <p className="text-gray-500 text-center py-12">No hay datos de productos disponibles</p>
+          )}
         </div>
       </div>
 

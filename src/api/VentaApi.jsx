@@ -128,12 +128,15 @@ export const getDetallesVenta = async (ventaId) => {
 };
 
 /**
- * Obtener ventas agrupadas por día para gráfico de líneas
- * @returns {Promise} Datos de ventas por día
+ * Obtener ventas agrupadas por día, mes o año para gráfico de líneas
+ * @param {string} periodo - 'dia', 'mes' o 'anio'
+ * @returns {Promise} Datos de ventas por periodo
  */
-export const getSalesOverTime = async () => {
+export const getSalesOverTime = async (periodo = 'dia') => {
   try {
-    const response = await axiosInstance.get('ventas/dashboard-sales-over-time/');
+    const response = await axiosInstance.get('ventas/dashboard-sales-over-time/', {
+      params: { periodo }
+    });
     return response.data;
   } catch (error) {
     console.error('Error al obtener ventas por fecha:', error);
@@ -142,15 +145,18 @@ export const getSalesOverTime = async () => {
 };
 
 /**
- * Obtener top 5 clientes con más compras
- * @returns {Promise} Lista de top clientes
+ * Obtener top 5 o bottom 5 clientes según orden
+ * @param {string} order - 'desc' para top 5 (más gastado), 'asc' para bottom 5 (menos gastado)
+ * @returns {Promise} Lista de clientes
  */
-export const getTopClients = async () => {
+export const getTopClients = async (order = 'desc') => {
   try {
-    const response = await axiosInstance.get('ventas/dashboard-top-clients/');
+    const response = await axiosInstance.get('ventas/dashboard-clients/', {
+      params: { order }
+    });
     return response.data;
   } catch (error) {
-    console.error('Error al obtener top clientes:', error);
+    console.error('Error al obtener clientes:', error);
     throw error;
   }
 };
@@ -165,6 +171,23 @@ export const getSalesPredictions = async () => {
     return response.data;
   } catch (error) {
     console.error('Error al obtener predicciones:', error);
+    throw error;
+  }
+};
+
+/**
+ * Obtener top 5 o bottom 5 productos según orden
+ * @param {string} order - 'desc' para top 5 (más vendidos), 'asc' para bottom 5 (menos vendidos)
+ * @returns {Promise} Lista de productos
+ */
+export const getTopProducts = async (order = 'desc') => {
+  try {
+    const response = await axiosInstance.get('ventas/dashboard-products/', {
+      params: { order }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error al obtener productos:', error);
     throw error;
   }
 };
