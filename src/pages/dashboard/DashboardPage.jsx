@@ -44,15 +44,17 @@ function DashboardPage() {
       
       // Formatear datos de ventas por fecha según periodo
       const formattedSales = salesOverTime.map(item => {
-        const date = new Date(item.fecha);
         let fechaLabel = '';
         
         if (periodo === 'dia') {
+          const date = new Date(item.fecha);
           fechaLabel = date.toLocaleDateString('es-BO', { month: 'short', day: 'numeric' });
         } else if (periodo === 'mes') {
+          const date = new Date(item.fecha);
           fechaLabel = date.toLocaleDateString('es-BO', { year: 'numeric', month: 'short' });
         } else if (periodo === 'anio') {
-          fechaLabel = date.getFullYear().toString();
+          // Para años, extraer directamente el año de la string para evitar problemas con zonas horarias
+          fechaLabel = item.fecha.substring(0, 4);
         }
         
         return {
@@ -100,15 +102,17 @@ function DashboardPage() {
     try {
       const salesOverTime = await getSalesOverTime(nuevoPeriodo);
       const formattedSales = salesOverTime.map(item => {
-        const date = new Date(item.fecha);
         let fechaLabel = '';
         
         if (nuevoPeriodo === 'dia') {
+          const date = new Date(item.fecha);
           fechaLabel = date.toLocaleDateString('es-BO', { month: 'short', day: 'numeric' });
         } else if (nuevoPeriodo === 'mes') {
+          const date = new Date(item.fecha);
           fechaLabel = date.toLocaleDateString('es-BO', { year: 'numeric', month: 'short' });
         } else if (nuevoPeriodo === 'anio') {
-          fechaLabel = date.getFullYear().toString();
+          // Para años, extraer directamente el año de la string para evitar problemas con zonas horarias
+          fechaLabel = item.fecha.substring(0, 4);
         }
         
         return {
@@ -200,7 +204,7 @@ function DashboardPage() {
       </div>
 
       {/* Tarjetas de estadísticas */}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         {/* Total de Ventas */}
         <div className="bg-white rounded-lg p-6 shadow-md hover:shadow-lg transition-shadow">
           <div className="flex items-center justify-between mb-4">
@@ -211,32 +215,6 @@ function DashboardPage() {
           <h3 className="text-gray-500 text-sm font-medium">Total Ventas</h3>
           <p className="text-3xl font-bold text-gray-800 mt-1">
             {stats?.total_ventas || 0}
-          </p>
-        </div>
-
-        {/* Completadas */}
-        <div className="bg-white rounded-lg p-6 shadow-md hover:shadow-lg transition-shadow">
-          <div className="flex items-center justify-between mb-4">
-            <div className="bg-green-100 rounded-full p-3">
-              <FaCheckCircle className="text-2xl text-green-600" />
-            </div>
-          </div>
-          <h3 className="text-gray-500 text-sm font-medium">Completadas</h3>
-          <p className="text-3xl font-bold text-green-600 mt-1">
-            {stats?.ventas_completadas || 0}
-          </p>
-        </div>
-
-        {/* Pendientes */}
-        <div className="bg-white rounded-lg p-6 shadow-md hover:shadow-lg transition-shadow">
-          <div className="flex items-center justify-between mb-4">
-            <div className="bg-yellow-100 rounded-full p-3">
-              <FaClock className="text-2xl text-yellow-600" />
-            </div>
-          </div>
-          <h3 className="text-gray-500 text-sm font-medium">Pendientes</h3>
-          <p className="text-3xl font-bold text-yellow-600 mt-1">
-            {stats?.ventas_pendientes || 0}
           </p>
         </div>
 
