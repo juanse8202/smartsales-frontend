@@ -106,7 +106,7 @@ const PagoCheckout = ({ isEcommerce = false }) => {
         venta_id: ventaId,
         monto: ventaInfo.total,
         moneda: 'BOB',
-        descripcion: `Pago de Venta #${ventaId} - Cliente: ${ventaInfo.cliente_nombre || 'N/A'}`
+        descripcion: `Pago de Venta #${ventaId} - Cliente: ${ventaInfo.cliente?.nombre || 'N/A'}`
       });
 
       if (response.reutilizado) {
@@ -250,7 +250,7 @@ const PagoCheckout = ({ isEcommerce = false }) => {
             </div>
             <div className="flex justify-between border-b pb-2">
               <span className="text-gray-600">Cliente:</span>
-              <span className="font-semibold">{ventaInfo.cliente_nombre || 'N/A'}</span>
+              <span className="font-semibold">{ventaInfo.cliente?.nombre || 'N/A'}</span>
             </div>
             <div className="flex justify-between border-b pb-2">
               <span className="text-gray-600">Monto Pagado:</span>
@@ -316,7 +316,7 @@ const PagoCheckout = ({ isEcommerce = false }) => {
               </div>
               <div className="flex justify-between border-b pb-2">
                 <span className="text-gray-600">Cliente:</span>
-                <span className="font-semibold">{ventaInfo.cliente_nombre || 'N/A'}</span>
+                <span className="font-semibold">{ventaInfo.cliente?.nombre || 'N/A'}</span>
               </div>
               <div className="flex justify-between border-b pb-2">
                 <span className="text-gray-600">Estado:</span>
