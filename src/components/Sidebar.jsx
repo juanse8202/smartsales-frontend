@@ -8,8 +8,11 @@ import {
   FaLightbulb,
   FaChevronLeft, 
   FaChevronRight,
-  FaChevronDown 
+  FaChevronDown,
+  FaSignOutAlt,
+  FaUser
 } from 'react-icons/fa';
+import { useAuth } from '../context/AuthContext';
 
 // 1. NUEVA ESTRUCTURA DE DATOS
 // Ahora los items pueden tener un array 'submodules'
@@ -62,6 +65,7 @@ const navData = [
 
 function Sidebar() {
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
   const [isExpanded, setIsExpanded] = useState(true);
   
   // 2. NUEVO ESTADO PARA SUBMENÚS
@@ -118,7 +122,7 @@ function Sidebar() {
       </div>
 
       {/* 4. LISTA DE ITEMS DE NAVEGACIÓN (ACTUALIZADA) */}
-      <nav className="h-full pt-4">
+      <nav className="flex flex-col pt-4 overflow-y-auto" style={{ height: 'calc(100vh - 80px - 140px)' }}>
         <ul className="flex flex-col space-y-1 px-4">
           
           {navData.map((item) => {
@@ -221,6 +225,35 @@ function Sidebar() {
           })}
         </ul>
       </nav>
+        
+      {/* Botón de Cerrar Sesión - Posición fija */}
+      <div className="border-t border-gray-200 px-4 py-4 bg-white">
+          {isExpanded ? (
+            <div className="mb-3 flex items-center gap-2 text-gray-700 px-3">
+              <FaUser className="text-teal-600" size={16} />
+              <span className="text-sm font-medium truncate">{user?.username}</span>
+            </div>
+          ) : null}
+          
+          <button
+            onClick={logout}
+            className={`group flex w-full items-center rounded-md p-3 text-white bg-red-600 transition-colors duration-200 hover:bg-red-700 ${
+              isExpanded ? 'justify-start' : 'justify-center'
+            }`}
+          >
+            <FaSignOutAlt size={18} />
+            {isExpanded && (
+              <span className="ml-3 whitespace-nowrap font-medium">
+                Cerrar Sesión
+              </span>
+            )}
+            {!isExpanded && (
+              <span className="absolute left-full ml-4 w-auto min-w-max scale-0 rounded-md bg-gray-800 px-3 py-1 text-xs font-medium text-white shadow-md transition-all duration-300 group-hover:scale-100">
+                Cerrar Sesión
+              </span>
+            )}
+          </button>
+        </div>
     </aside>
   );
 }
