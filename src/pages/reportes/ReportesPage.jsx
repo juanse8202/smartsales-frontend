@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { FaMicrophone, FaStop, FaFileDownload, FaTable, FaFilePdf, FaFileExcel } from 'react-icons/fa';
-import { generateReport, downloadReport } from '../../api/ReportApi';
+import { FaMicrophone, FaStop, FaFileDownload, FaTable, FaFilePdf, FaFileExcel, FaCalendarCheck, FaBoxes } from 'react-icons/fa';
+import { generateReport, downloadReport, downloadSalesThisMonthExcel, downloadInventoryAvailablePdf } from '../../api/ReportApi';
 
 const ReportesPage = () => {
     const [prompt, setPrompt] = useState('');
@@ -114,6 +114,58 @@ const ReportesPage = () => {
         }
     };
 
+    // Descargar reporte estándar de ventas del mes
+    const handleDownloadSalesMonth = async () => {
+        setLoading(true);
+        setError(null);
+
+        try {
+            const blob = await downloadSalesThisMonthExcel();
+            
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            const today = new Date();
+            const monthYear = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+            link.download = `ventas_${monthYear}.xlsx`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+
+            setVoiceStatus('Reporte de ventas del mes descargado exitosamente');
+        } catch (err) {
+            setError(err.response?.data?.error || 'Error al descargar el reporte de ventas');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Descargar reporte estándar de inventario disponible
+    const handleDownloadInventory = async () => {
+        setLoading(true);
+        setError(null);
+
+        try {
+            const blob = await downloadInventoryAvailablePdf();
+            
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'inventario_disponible.pdf';
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+
+            setVoiceStatus('Reporte de inventario descargado exitosamente');
+        } catch (err) {
+            setError(err.response?.data?.error || 'Error al descargar el reporte de inventario');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     // Ejemplos de prompts
     const ejemplos = [
         "Reporte de inventario disponible en PDF",
@@ -214,9 +266,49 @@ const ReportesPage = () => {
                 )}
             </div>
 
+            {/* Reportes Estándar */}
+            <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg shadow-md p-6 mb-6 border-2 border-purple-200">
+                <h2 className="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+                    <FaFileDownload className="mr-2 text-purple-600" />
+                    Reportes Estándar (Descarga Rápida)
+                </h2>
+                <p className="text-sm text-gray-600 mb-4">
+                    Reportes predefinidos listos para descargar con un solo clic
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <button
+                        onClick={handleDownloadSalesMonth}
+                        disabled={loading}
+                        className="flex items-center gap-3 px-6 py-4 bg-white border-2 border-green-300 hover:border-green-500 hover:bg-green-50 rounded-lg transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        <div className="bg-green-100 p-3 rounded-full">
+                            <FaCalendarCheck className="text-2xl text-green-600" />
+                        </div>
+                        <div className="text-left">
+                            <h3 className="font-semibold text-gray-800">Ventas del Mes Actual</h3>
+                            <p className="text-xs text-gray-600">Descarga en formato Excel (.xlsx)</p>
+                        </div>
+                    </button>
+
+                    <button
+                        onClick={handleDownloadInventory}
+                        disabled={loading}
+                        className="flex items-center gap-3 px-6 py-4 bg-white border-2 border-blue-300 hover:border-blue-500 hover:bg-blue-50 rounded-lg transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        <div className="bg-blue-100 p-3 rounded-full">
+                            <FaBoxes className="text-2xl text-blue-600" />
+                        </div>
+                        <div className="text-left">
+                            <h3 className="font-semibold text-gray-800">Inventario Disponible</h3>
+                            <p className="text-xs text-gray-600">Agrupado por categoría - PDF</p>
+                        </div>
+                    </button>
+                </div>
+            </div>
+
             {/* Ejemplos */}
             <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-                <h2 className="text-lg font-semibold text-gray-800 mb-3">Ejemplos de reportes:</h2>
+                <h2 className="text-lg font-semibold text-gray-800 mb-3">Ejemplos de reportes personalizados:</h2>
                 <div className="flex flex-wrap gap-2">
                     {ejemplos.map((ejemplo, index) => (
                         <button
