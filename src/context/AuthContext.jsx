@@ -35,6 +35,12 @@ export const AuthProvider = ({ children }) => {
       
       setUser(userData);
       setShowLoginModal(false);
+      
+      // Redireccionar a dashboard si es administrador
+      if (userData.is_staff) {
+        window.location.href = '/dashboard';
+      }
+      
       return { success: true };
     } catch (error) {
       console.error('Error en login:', error);
